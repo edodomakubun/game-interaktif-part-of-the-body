@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Edukasi: My Body Parts</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'shake': 'shake 0.4s ease-in-out',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '50%': { transform: 'translateX(5px)' },
+                            '75%': { transform: 'translateX(-5px)' },
+                        },
+                        fadeIn: {
+                            'from': { opacity: '0', transform: 'translateY(10px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-gray-800 selection:bg-indigo-200 relative overflow-hidden">
+
+    <!-- Audio Background Setup -->
+    <audio id="bgm" loop>
+        <!-- Anda bisa mengganti URL src di bawah ini dengan file MP3 lokal Anda (misal: "src/audio.mp3") -->
+        <source src="https://assets.mixkit.co/music/preview/mixkit-happy-times-158.mp3" type="audio/mpeg">
+    </audio>
+
+    <button onclick="toggleBgm()" class="fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-lg border-2 border-indigo-200 hover:scale-110 transition-transform flex items-center justify-center gap-2 text-indigo-800 font-bold" title="Nyalakan/Matikan Musik">
+        <span id="bgm-icon" class="text-2xl">🔇</span>
+        <span id="bgm-text" class="hidden sm:inline text-sm">Musik Off</span>
+    </button>
+
+    <!-- Background Decor Full Animasi -->
+    <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob z-0 pointer-events-none"></div>
+    <div class="fixed top-[20%] right-[-10%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-2000 z-0 pointer-events-none"></div>
+    <div class="fixed bottom-[-20%] left-[20%] w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-4000 z-0 pointer-events-none"></div>
+
+    <!-- Main Container -->
+    <div id="app" class="container mx-auto pb-12 pt-6 px-4 relative z-10">
+        <!-- Konten akan dirender melalui JavaScript -->
+    </div>
+
+    <!-- Global Credit Footer -->
+    <div class="fixed bottom-3 w-full text-center z-20 pointer-events-none">
+        <p class="text-sm md:text-base font-medium text-gray-500 bg-white/60 backdrop-blur-md inline-block px-5 py-1.5 rounded-full shadow-sm border border-white/50">
+            Develop oleh <span class="font-black text-indigo-600">Edward Domakubun</span>
+        </p>
+    </div>
+
+    <script>
+        // --- DATA GAME ---
+        const gameData = {
+            head: {
+                id: 'head', title: 'The Head Part', icon: '🧑', colorClass: 'bg-pink-100', borderColor: 'border-pink-400', textColor: 'text-pink-800', btnLearn: 'bg-pink-50', textLearn: 'text-pink-700',
+                vocab: [
+                    { en: 'Head', id: 'Kepala' }, { en: 'Hair', id: 'Rambut' }, { en: 'Forehead', id: 'Dahi / Jidat' },
+                    { en: 'Eyebrow', id: 'Alis mata' }, { en: 'Eye', id: 'Mata' }, { en: 'Ear', id: 'Telinga' },
+                    { en: 'Nose', id: 'Hidung' }, { en: 'Cheek', id: 'Pipi' }, { en: 'Mouth', id: 'Mulut' },
+                    { en: 'Lip', id: 'Bibir' }, { en: 'Tooth / Teeth', id: 'Gigi (Satu) / Gigi (Banyak)' },
+                    { en: 'Tongue', id: 'Lidah' }, { en: 'Chin', id: 'Dagu' }
+                ],
+                sentences: [
+                    { en: 'I have two eyes. I see with my eyes.', id: 'Aku punya dua mata. Aku melihat dengan mataku.' },
+                    { en: 'I have one nose. I smell food with my nose.', id: 'Aku punya satu hidung. Aku mencium bau makanan dengan hidungku.' },
+                    { en: 'I chew food with my teeth.', id: 'Aku mengunyah makanan dengan gigiku.' },
+                    { en: 'I listen to music with my ears.', id: 'Aku mendengarkan musik dengan telingaku.' }
+                ]
+            },
+            body: {
+                id: 'body', title: 'The Body Part', icon: '👕', colorClass: 'bg-blue-100', borderColor: 'border-blue-400', textColor: 'text-blue-800', btnLearn: 'bg-blue-50', textLearn: 'text-blue-700',
+                vocab: [
+                    { en: 'Neck', id: 'Leher' }, { en: 'Shoulder', id: 'Bahu / Pundak' }, { en: 'Chest', id: 'Dada' },
+                    { en: 'Stomach', id: 'Perut' }, { en: 'Back', id: 'Punggung' }, { en: 'Waist', id: 'Pinggang' }
+                ],
+                sentences: [
+                    { en: 'My stomach is full after eating.', id: 'Perutku kenyang setelah makan.' },
+                    { en: 'I carry my backpack on my back.', id: 'Aku membawa tas punggungku di punggungku.' },
+                    { en: 'Father wears a tie around his neck.', id: 'Ayah memakai dasi di lehernya.' }
+                ]
+            },
+            hand: {
+                id: 'hand', title: 'The Hand Part', icon: '🖐️', colorClass: 'bg-green-100', borderColor: 'border-green-400', textColor: 'text-green-800', btnLearn: 'bg-green-50', textLearn: 'text-green-700',
+                vocab: [
+                    { en: 'Arm', id: 'Lengan' }, { en: 'Elbow', id: 'Siku' }, { en: 'Hand', id: 'Tangan' },
+                    { en: 'Palm', id: 'Telapak tangan' }, { en: 'Finger', id: 'Jari tangan' }, { en: 'Thumb', id: 'Ibu jari / Jempol' },
+                    { en: 'Forefinger / Index finger', id: 'Jari telunjuk' }, { en: 'Middle finger', id: 'Jari tengah' },
+                    { en: 'Ring finger', id: 'Jari manis' }, { en: 'Little finger / Pinky', id: 'Jari kelingking' }
+                ],
+                sentences: [
+                    { en: 'I have two hands and ten fingers.', id: 'Aku punya dua tangan dan sepuluh jari tangan.' },
+                    { en: 'I write a letter with my hand.', id: 'Aku menulis surat dengan tanganku.' },
+                    { en: 'I hold a glass of water with my hand.', id: 'Aku memegang segelas air dengan tanganku.' }
+                ]
+            }
+        };
+
+        // --- GLOBAL STATE ---
+        let screen = 'home'; // home, learn, quiz, match, result, duel, duel-result
+        let selectedCategory = null;
+        let mode = null;
+        let xp = 0;
+        let learnActiveTab = 'vocab';
+
+        // BGM State
+        let isBgmPlaying = false;
+        const bgmAudio = document.getElementById('bgm');
+        bgmAudio.volume = 0.15; // Volume 15%
+
+        // Quiz State
+        let quizQuestions = [];
+        let currentQIndex = 0;
+        let score = 0;
+        let selectedOption = null;
+        let isAnswered = false;
+
+        // Match State
+        let matchEnItems = [];
+        let matchIdItems = [];
+        let selectedEn = null;
+        let selectedId = null;
+        let matchedPairs = [];
+        let isMatchError = false;
+
+        // Duel State
+        let player1Score = 0;
+        let player2Score = 0;
+        let duelTimer = 10;
+        let duelInterval = null;
+        let p1Locked = false;
+        let p2Locked = false;
+        let duelRoundWinner = null;
+        let duelIsAnswered = false;
+
+        // --- UTILS ---
+        function playPronunciation(text) {
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = text;
+            msg.lang = 'en-US';
+            msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function toggleBgm() {
+            if (isBgmPlaying) {
+                bgmAudio.pause();
+                document.getElementById('bgm-icon').innerText = '🔇';
+                document.getElementById('bgm-text').innerText = 'Musik Off';
+            } else {
+                bgmAudio.play().catch(e => console.log("Interaksi user dibutuhkan untuk memutar audio", e));
+                document.getElementById('bgm-icon').innerText = '🔊';
+                document.getElementById('bgm-text').innerText = 'Musik On';
+            }
+            isBgmPlaying = !isBgmPlaying;
+        }
+
+        function generateQuiz(categoryId) {
+            const category = gameData[categoryId];
+            const vocabList = category.vocab;
+            let questions = [];
+            const numQuestions = Math.min(10, vocabList.length * 2);
+
+            for (let i = 0; i < numQuestions; i++) {
+                const targetVocab = vocabList[Math.floor(Math.random() * vocabList.length)];
+                const isEnToId = Math.random() > 0.5;
+                let questionText, correctAnswer, wrongAnswersPool;
+
+                if (isEnToId) {
+                    questionText = `Apa arti dari kata "${targetVocab.en}"?`;
+                    correctAnswer = targetVocab.id;
+                    wrongAnswersPool = vocabList.filter(v => v.id !== targetVocab.id).map(v => v.id);
+                } else {
+                    questionText = `Bahasa Inggris dari "${targetVocab.id}" adalah?`;
+                    correctAnswer = targetVocab.en;
+                    wrongAnswersPool = vocabList.filter(v => v.en !== targetVocab.en).map(v => v.en);
+                }
+
+                wrongAnswersPool.sort(() => 0.5 - Math.random());
+                const distractors = wrongAnswersPool.slice(0, 3);
+                const options = [...distractors, correctAnswer].sort(() => 0.5 - Math.random());
+
+                questions.push({ question: questionText, options: options, answer: correctAnswer });
+            }
+            return questions;
+        }
+
+        // --- ROUTING / NAVIGATION ---
+        function goHome() {
+            screen = 'home';
+            selectedCategory = null;
+            mode = null;
+            clearInterval(duelInterval);
+            render();
+        }
+
+        function selectCategoryAndMode(categoryId, playMode) {
+            selectedCategory = categoryId;
+            mode = playMode;
+
+            if (playMode === 'quiz') {
+                quizQuestions = generateQuiz(categoryId);
+                currentQIndex = 0;
+                score = 0;
+                selectedOption = null;
+                isAnswered = false;
+                screen = 'quiz';
+            } else if (playMode === 'match') {
+                const vocab = gameData[categoryId].vocab;
+                const subset = [...vocab].sort(() => 0.5 - Math.random()).slice(0, 6);
+                matchEnItems = [...subset].sort(() => 0.5 - Math.random());
+                matchIdItems = [...subset].sort(() => 0.5 - Math.random());
+                matchedPairs = [];
+                selectedEn = null;
+                selectedId = null;
+                isMatchError = false;
+                screen = 'match';
+            } else if (playMode === 'duel') {
+                quizQuestions = generateQuiz(categoryId);
+                currentQIndex = 0;
+                player1Score = 0;
+                player2Score = 0;
+                duelTimer = 10;
+                p1Locked = false;
+                p2Locked = false;
+                duelRoundWinner = null;
+                duelIsAnswered = false;
+                screen = 'duel';
+                startDuelTimer();
+            } else {
+                learnActiveTab = 'vocab';
+                screen = 'learn';
+            }
+            render();
+        }
+
+        // --- RENDER LOGIC ---
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = ''; // Kosongkan container
+
+            if (screen === 'home') app.innerHTML = getHomeHTML();
+            else if (screen === 'learn') app.innerHTML = getLearnHTML();
+            else if (screen === 'match') app.innerHTML = getMatchHTML();
+            else if (screen === 'quiz') app.innerHTML = getQuizHTML();
+            else if (screen === 'result') app.innerHTML = getResultHTML();
+            else if (screen === 'duel') app.innerHTML = getDuelHTML();
+            else if (screen === 'duel-result') app.innerHTML = getDuelResultHTML();
+        }
+
+        // --- 1. HOME SCREEN ---
+        function getHomeHTML() {
+            const level = Math.floor(xp / 100) + 1;
+            const xpProgress = xp % 100;
+            const leaderboard = [
+                { name: 'Budi (Bot)', xp: 350 }, { name: 'Siti (Bot)', xp: 220 },
+                { name: 'Kamu (Pemain)', xp: xp }, { name: 'Andi (Bot)', xp: 110 }
+            ].sort((a, b) => b.xp - a.xp);
+
+            let categoriesHTML = '';
+            for (const key in gameData) {
+                const cat = gameData[key];
+                categoriesHTML += `
+                <div class="p-8 rounded-[2rem] border-4 shadow-xl flex flex-col items-center transform transition-all duration-300 hover:-translate-y-3 hover:shadow-2xl bg-white ${cat.borderColor}">
+                    <div class="w-24 h-24 rounded-full flex items-center justify-center text-5xl mb-6 shadow-inner ${cat.colorClass}">
+                        ${cat.icon}
+                    </div>
+                    <h2 class="text-3xl font-extrabold mb-8 text-center text-gray-800">${cat.title}</h2>
+                    <div class="flex flex-col w-full gap-3 mt-auto">
+                        <button onclick="selectCategoryAndMode('${cat.id}', 'learn')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3 px-4 rounded-2xl shadow-sm transition-all hover:scale-105 flex items-center justify-center gap-2">
+                            📖 <span>Belajar Kosakata</span>
+                        </button>
+                        <button onclick="selectCategoryAndMode('${cat.id}', 'match')" class="bg-green-50 hover:bg-green-100 text-green-700 font-bold py-3 px-4 rounded-2xl shadow-sm transition-all hover:scale-105 flex items-center justify-center gap-2">
+                            🧩 <span>Cocokkan Kata</span>
+                        </button>
+                        <div class="flex gap-2 w-full">
+                            <button onclick="selectCategoryAndMode('${cat.id}', 'quiz')" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-2 rounded-2xl shadow-md transition-all hover:scale-105 flex items-center justify-center gap-2">
+                                🎮 <span>Kuis</span>
+                            </button>
+                            <button onclick="selectCategoryAndMode('${cat.id}', 'duel')" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-2 rounded-2xl shadow-md transition-all hover:scale-105 flex items-center justify-center gap-2">
+                                ⚔️ <span>Duel</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            let leaderboardHTML = leaderboard.map((user, idx) => `
+                <div class="flex items-center justify-between p-4 rounded-2xl font-bold ${user.name === 'Kamu (Pemain)' ? 'bg-indigo-100 border-2 border-indigo-400 text-indigo-900 shadow-md transform scale-105' : 'bg-gray-50 border border-gray-100 text-gray-600'}">
+                    <div class="flex items-center gap-4">
+                        <span class="text-xl w-8 text-center">${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1 + '.'}</span>
+                        <span class="text-lg">${user.name}</span>
+                    </div>
+                    <span class="bg-white px-3 py-1 rounded-lg shadow-sm text-indigo-600">${user.xp} XP</span>
+                </div>
+            `).join('');
+
+            return `
+            <div class="flex flex-col items-center min-h-[80vh] text-center animate-fade-in">
+                <!-- Header Stats -->
+                <div class="bg-white px-6 py-3 rounded-full shadow-md flex items-center justify-between gap-6 mb-8 w-full max-w-4xl mx-auto border-2 border-indigo-100 transform transition-all hover:scale-105">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-indigo-500 text-white font-black w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-inner">${level}</div>
+                        <span class="font-bold text-gray-700">Level Kamu</span>
+                    </div>
+                    <div class="flex-1 max-w-xs">
+                        <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
+                            <span>XP: ${xp}</span><span>Next: ${level * 100}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                            <div class="bg-gradient-to-r from-green-400 to-indigo-500 h-3 rounded-full transition-all duration-1000 ease-out" style="width: ${xpProgress}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-7xl mb-2 animate-bounce">🤸‍♂️</div>
+                <h1 class="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4 drop-shadow-sm">My Body Parts</h1>
+                <p class="text-xl text-gray-600 mb-10 font-medium">Main, Belajar, dan Kumpulkan XP!</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mb-12">
+                    ${categoriesHTML}
+                </div>
+
+                <div class="w-full max-w-4xl bg-white rounded-[2rem] p-8 shadow-lg border border-gray-100">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">🏆 <span>Leaderboard Global</span></h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        ${leaderboardHTML}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- 2. LEARN SCREEN ---
+        function setLearnTab(tab) {
+            learnActiveTab = tab;
+            render();
+        }
+
+        function getLearnHTML() {
+            const data = gameData[selectedCategory];
+            let contentHTML = '';
+
+            if (learnActiveTab === 'vocab') {
+                contentHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">` + data.vocab.map((item, idx) => `
+                    <div onclick="playPronunciation('${item.en.replace(/'/g, "\\'")}')" class="group flex justify-between items-center p-4 rounded-2xl bg-gray-50 border border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <button class="bg-white p-2 rounded-full shadow-sm text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-colors" title="Dengarkan Suara">🔊</button>
+                            <span class="text-xl font-bold text-indigo-900">${item.en}</span>
+                        </div>
+                        <span class="text-lg font-medium text-gray-600 text-right">${item.id}</span>
+                    </div>
+                `).join('') + `</div>`;
+            } else {
+                contentHTML = `<div class="flex flex-col gap-4">` + data.sentences.map((item, idx) => `
+                    <div onclick="playPronunciation('${item.en.replace(/'/g, "\\'")}')" class="group p-6 rounded-2xl bg-blue-50 border-l-8 border-blue-500 transition-all hover:bg-blue-100 hover:shadow-md cursor-pointer">
+                        <div class="flex gap-4">
+                            <div class="text-2xl mt-1 text-blue-500 group-hover:animate-pulse">🔊</div>
+                            <div>
+                                <p class="text-2xl font-black text-blue-900 mb-2">"${item.en}"</p>
+                                <p class="text-lg text-gray-700 italic font-medium">${item.id}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') + `</div>`;
+            }
+
+            return `
+            <div class="max-w-4xl mx-auto animate-fade-in">
+                <div class="flex items-center justify-between mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl ${data.colorClass}">${data.icon}</div>
+                        <div>
+                            <h2 class="text-2xl font-black text-gray-800">${data.title}</h2>
+                            <p class="text-indigo-500 font-bold text-sm">Mode Belajar</p>
+                        </div>
+                    </div>
+                    <button onclick="goHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl transition-all transform hover:-translate-x-1">⬅ Kembali</button>
+                </div>
+                <div class="flex gap-4 mb-6">
+                    <button onclick="setLearnTab('vocab')" class="flex-1 py-4 px-6 rounded-2xl font-bold text-lg transition-all transform ${learnActiveTab === 'vocab' ? 'bg-indigo-600 text-white shadow-xl scale-105' : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50'}">📚 Kosakata (Vocabulary)</button>
+                    <button onclick="setLearnTab('sentences')" class="flex-1 py-4 px-6 rounded-2xl font-bold text-lg transition-all transform ${learnActiveTab === 'sentences' ? 'bg-indigo-600 text-white shadow-xl scale-105' : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50'}">💬 Kalimat (Sentences)</button>
+                </div>
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl border border-gray-100 min-h-[50vh]">
+                    ${contentHTML}
+                </div>
+            </div>`;
+        }
+
+        // --- 3. MATCH SCREEN ---
+        function handleSelectMatch(type, itemIndex) {
+            if (isMatchError) return;
+            const item = type === 'en' ? matchEnItems[itemIndex] : matchIdItems[itemIndex];
+            
+            if (matchedPairs.includes(item.en)) return;
+
+            if (type === 'en') selectedEn = item.en;
+            if (type === 'id') selectedId = item.id;
+
+            render();
+
+            if (selectedEn && selectedId) {
+                const correctMatch = gameData[selectedCategory].vocab.find(v => v.en === selectedEn && v.id === selectedId);
+                
+                if (correctMatch) {
+                    playPronunciation(correctMatch.en);
+                    matchedPairs.push(correctMatch.en);
+                    selectedEn = null;
+                    selectedId = null;
+                    render();
+                    
+                    if (matchedPairs.length === matchEnItems.length) {
+                        setTimeout(() => {
+                            score = 100;
+                            xp += 50;
+                            screen = 'result';
+                            render();
+                        }, 1000);
+                    }
+                } else {
+                    isMatchError = true;
+                    render();
+                    setTimeout(() => {
+                        isMatchError = false;
+                        selectedEn = null;
+                        selectedId = null;
+                        render();
+                    }, 800);
+                }
+            }
+        }
+
+        function getMatchHTML() {
+            const data = gameData[selectedCategory];
+            
+            let enColHTML = matchEnItems.map((item, idx) => {
+                const isMatched = matchedPairs.includes(item.en);
+                const isSelected = selectedEn === item.en;
+                let classes = "p-4 rounded-xl font-bold text-lg border-2 transition-all cursor-pointer shadow-sm ";
+                if (isMatched) classes += "bg-green-100 border-green-500 text-green-800 opacity-50 cursor-default scale-95";
+                else if (isSelected) classes += "bg-indigo-500 border-indigo-600 text-white shadow-lg scale-105 " + (isMatchError && selectedId ? "animate-shake bg-red-500 border-red-600" : "");
+                else classes += "bg-gray-50 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:border-indigo-300";
+                return `<div onclick="handleSelectMatch('en', ${idx})" class="${classes}">${item.en} ${isMatched ? '✅' : ''}</div>`;
+            }).join('');
+
+            let idColHTML = matchIdItems.map((item, idx) => {
+                const isMatched = matchedPairs.includes(item.en);
+                const isSelected = selectedId === item.id;
+                let classes = "p-4 rounded-xl font-bold text-lg border-2 transition-all cursor-pointer shadow-sm ";
+                if (isMatched) classes += "bg-green-100 border-green-500 text-green-800 opacity-50 cursor-default scale-95";
+                else if (isSelected) classes += "bg-orange-500 border-orange-600 text-white shadow-lg scale-105 " + (isMatchError && selectedEn ? "animate-shake bg-red-500 border-red-600" : "");
+                else classes += "bg-gray-50 border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300";
+                return `<div onclick="handleSelectMatch('id', ${idx})" class="${classes}">${item.id} ${isMatched ? '✅' : ''}</div>`;
+            }).join('');
+
+            return `
+            <div class="max-w-4xl mx-auto animate-fade-in">
+                <div class="flex items-center justify-between mb-8 bg-white p-4 rounded-2xl shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl bg-green-100">${data.icon}</div>
+                        <div>
+                            <h2 class="text-2xl font-black text-gray-800">Cocokkan Kata</h2>
+                            <p class="text-green-600 font-bold text-sm">Pilih kata Inggris, lalu pilih artinya!</p>
+                        </div>
+                    </div>
+                    <button onclick="goHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl">Batalkan</button>
+                </div>
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl border border-gray-100 text-center">
+                    <div class="flex flex-col md:flex-row justify-between gap-8">
+                        <div class="flex-1 flex flex-col gap-4">
+                            <h3 class="text-xl font-bold text-indigo-800 mb-2">English</h3>
+                            ${enColHTML}
+                        </div>
+                        <div class="flex-1 flex flex-col gap-4">
+                            <h3 class="text-xl font-bold text-orange-800 mb-2">Indonesia</h3>
+                            ${idColHTML}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- 4. QUIZ SCREEN ---
+        function handleQuizAnswer(optionIndex) {
+            if (isAnswered) return;
+            const currentQ = quizQuestions[currentQIndex];
+            selectedOption = currentQ.options[optionIndex];
+            isAnswered = true;
+            if (selectedOption === currentQ.answer) {
+                score += 10;
+            }
+            render();
+        }
+
+        function nextQuizQuestion() {
+            if (currentQIndex < quizQuestions.length - 1) {
+                currentQIndex++;
+                selectedOption = null;
+                isAnswered = false;
+                render();
+            } else {
+                xp += score;
+                screen = 'result';
+                render();
+            }
+        }
+
+        function getQuizHTML() {
+            const data = gameData[selectedCategory];
+            const currentQ = quizQuestions[currentQIndex];
+            const progress = (currentQIndex / quizQuestions.length) * 100;
+
+            let optionsHTML = currentQ.options.map((option, index) => {
+                let btnClass = "bg-gray-50 border-2 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:border-indigo-400 hover:shadow-md";
+                if (isAnswered) {
+                    if (option === currentQ.answer) btnClass = "bg-green-500 border-green-600 text-white font-bold shadow-lg scale-105 animate-pulse";
+                    else if (option === selectedOption) btnClass = "bg-red-500 border-red-600 text-white font-bold shadow-lg scale-105 animate-shake";
+                    else btnClass = "bg-gray-100 border-gray-200 text-gray-400 opacity-50";
+                }
+                return `<button onclick="handleQuizAnswer(${index})" ${isAnswered ? 'disabled' : ''} class="p-5 rounded-2xl text-xl font-bold transition-all transform ${btnClass}">${option}</button>`;
+            }).join('');
+
+            return `
+            <div class="max-w-3xl mx-auto animate-fade-in">
+                <div class="flex items-center justify-between mb-8 bg-white p-4 rounded-2xl shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl bg-indigo-100 p-2 rounded-full">${data.icon}</span>
+                        <h2 class="text-2xl font-black text-gray-800">Kuis: ${data.title}</h2>
+                    </div>
+                    <div class="text-lg font-black bg-indigo-600 text-white py-2 px-6 rounded-full shadow-md">
+                        ${currentQIndex + 1} <span class="text-indigo-200">/ ${quizQuestions.length}</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[2rem] p-6 md:p-10 shadow-2xl border border-gray-100 text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 h-3 bg-gradient-to-r from-blue-400 to-indigo-600 transition-all duration-500" style="width: ${progress}%"></div>
+                    <h3 class="text-3xl md:text-4xl font-black text-gray-800 mb-10 mt-6 leading-tight">${currentQ.question}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        ${optionsHTML}
+                    </div>
+                    <div class="h-16">
+                        ${isAnswered ? `
+                            <div class="p-3 rounded-xl font-bold text-xl inline-block transition-all transform scale-110 ${selectedOption === currentQ.answer ? 'text-green-600' : 'text-red-600'}">
+                                ${selectedOption === currentQ.answer ? '🎉 Benar Sekali! (+10 XP)' : '❌ Aduh, yang benar: ' + currentQ.answer}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="flex justify-between items-center mt-6 border-t-2 border-gray-100 pt-6">
+                        <button onclick="goHome()" class="text-gray-400 font-bold hover:text-gray-800 transition-colors">Batalkan</button>
+                        <button onclick="nextQuizQuestion()" ${!isAnswered ? 'disabled' : ''} class="py-4 px-10 rounded-2xl font-black text-white text-lg transition-all transform ${isAnswered ? 'bg-gray-800 hover:bg-black shadow-xl hover:scale-105' : 'bg-gray-300 cursor-not-allowed'}">
+                            ${currentQIndex < quizQuestions.length - 1 ? 'Selanjutnya ➔' : 'Selesai ➔'}
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- 5. RESULT SCREEN ---
+        function getResultHTML() {
+            return `
+            <div class="max-w-2xl mx-auto text-center animate-fade-in">
+                <div class="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-gray-100 transform transition-all hover:scale-[1.02]">
+                    <div class="text-8xl mb-6 animate-bounce">🏆</div>
+                    <h2 class="text-4xl font-black text-gray-800 mb-2">Kerja Bagus!</h2>
+                    <p class="text-xl text-gray-500 mb-8 font-bold">Aktivitas Selesai</p>
+                    <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-[2rem] p-10 mb-10 text-white shadow-xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl transform translate-x-10 -translate-y-10"></div>
+                        <p class="text-lg opacity-90 mb-2 font-bold uppercase tracking-widest">Kamu Mendapat</p>
+                        <p class="text-7xl font-black mb-2">+${mode === 'match' ? '50' : score} <span class="text-3xl text-indigo-200">XP</span></p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="selectCategoryAndMode('${selectedCategory}', '${mode}')" class="bg-indigo-50 border-2 border-indigo-200 hover:bg-indigo-100 text-indigo-700 font-black py-4 px-8 rounded-2xl transition-all hover:scale-105 shadow-sm">
+                            🔄 Main Lagi
+                        </button>
+                        <button onclick="goHome()" class="bg-gray-800 hover:bg-black text-white font-black py-4 px-8 rounded-2xl transition-all shadow-xl hover:shadow-2xl hover:scale-105">
+                            🏠 Menu Utama
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- 6. DUEL SCREEN ---
+        function startDuelTimer() {
+            clearInterval(duelInterval);
+            duelInterval = setInterval(() => {
+                if (!duelIsAnswered && duelTimer > 0) {
+                    duelTimer--;
+                    const timerEl = document.getElementById('duel-timer-display');
+                    if (timerEl) {
+                        timerEl.innerText = duelTimer;
+                        if (duelTimer <= 3) {
+                            timerEl.classList.add('bg-red-500', 'text-white', 'animate-pulse');
+                            timerEl.classList.remove('bg-yellow-400', 'text-yellow-900');
+                        }
+                    }
+                    if (duelTimer === 0) {
+                        duelRoundWinner = 'draw';
+                        duelIsAnswered = true;
+                        clearInterval(duelInterval);
+                        render();
+                        setTimeout(nextDuelQuestion, 2000);
+                    }
+                }
+            }, 1000);
+        }
+
+        function handleDuelAnswer(player, optionIndex) {
+            if (duelIsAnswered || (player === 'p1' && p1Locked) || (player === 'p2' && p2Locked)) return;
+            const currentQ = quizQuestions[currentQIndex];
+            const option = currentQ.options[optionIndex];
+            const isCorrect = option === currentQ.answer;
+
+            if (isCorrect) {
+                duelRoundWinner = player;
+                if (player === 'p1') player1Score += 10;
+                else player2Score += 10;
+                duelIsAnswered = true;
+                clearInterval(duelInterval);
+                render();
+                setTimeout(nextDuelQuestion, 2000);
+            } else {
+                if (player === 'p1') p1Locked = true;
+                else p2Locked = true;
+
+                if (p1Locked && p2Locked) {
+                    duelRoundWinner = 'draw';
+                    duelIsAnswered = true;
+                    clearInterval(duelInterval);
+                    render();
+                    setTimeout(nextDuelQuestion, 2000);
+                } else {
+                    render(); // Render untuk update UI (tanda silang)
+                }
+            }
+        }
+
+        function nextDuelQuestion() {
+            if (currentQIndex < quizQuestions.length - 1) {
+                currentQIndex++;
+                duelTimer = 10;
+                p1Locked = false;
+                p2Locked = false;
+                duelRoundWinner = null;
+                duelIsAnswered = false;
+                render();
+                startDuelTimer();
+            } else {
+                screen = 'duel-result';
+                render();
+            }
+        }
+
+        function getDuelHTML() {
+            const data = gameData[selectedCategory];
+            const currentQ = quizQuestions[currentQIndex];
+
+            const p1OptionsHTML = currentQ.options.map((opt, i) => {
+                let btnClass = "bg-white border-b-4 border-pink-200 text-pink-900 hover:bg-pink-50";
+                if (duelIsAnswered) {
+                    if (opt === currentQ.answer) btnClass = "bg-green-500 border-green-700 text-white";
+                    else btnClass = "bg-gray-100 border-gray-200 text-gray-400 opacity-50";
+                } else if (p1Locked) {
+                    btnClass = "bg-red-100 border-red-200 text-red-400 opacity-50";
+                }
+                return `<button onclick="handleDuelAnswer('p1', ${i})" ${duelIsAnswered || p1Locked ? 'disabled' : ''} class="p-4 rounded-2xl text-xl font-bold transition-all active:scale-95 ${btnClass}">${opt}</button>`;
+            }).join('');
+
+            const p2OptionsHTML = currentQ.options.map((opt, i) => {
+                let btnClass = "bg-white border-b-4 border-blue-200 text-blue-900 hover:bg-blue-50";
+                if (duelIsAnswered) {
+                    if (opt === currentQ.answer) btnClass = "bg-green-500 border-green-700 text-white";
+                    else btnClass = "bg-gray-100 border-gray-200 text-gray-400 opacity-50";
+                } else if (p2Locked) {
+                    btnClass = "bg-red-100 border-red-200 text-red-400 opacity-50";
+                }
+                return `<button onclick="handleDuelAnswer('p2', ${i})" ${duelIsAnswered || p2Locked ? 'disabled' : ''} class="p-4 rounded-2xl text-xl font-bold transition-all active:scale-95 ${btnClass}">${opt}</button>`;
+            }).join('');
+
+            return `
+            <div class="max-w-6xl mx-auto animate-fade-in w-full">
+                <div class="flex justify-between items-center mb-4 px-4">
+                    <button onclick="goHome()" class="bg-white border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-bold py-2 px-6 rounded-xl transition-all shadow-sm z-20">Keluar Duel</button>
+                    <div class="text-lg font-black bg-yellow-400 text-yellow-900 py-2 px-6 rounded-full shadow-md z-20 border-2 border-white">
+                        Ronde ${currentQIndex + 1} / ${quizQuestions.length}
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl text-center mb-8 relative border-4 border-indigo-50">
+                    <div id="duel-timer-display" class="absolute -top-8 left-1/2 transform -translate-x-1/2 font-black text-3xl w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-white transition-colors duration-300 ${duelTimer <= 3 && !duelIsAnswered ? 'bg-red-500 text-white animate-pulse' : 'bg-yellow-400 text-yellow-900'}">
+                        ${duelTimer}
+                    </div>
+                    <h3 class="text-2xl md:text-4xl font-black text-gray-800 mt-6 mb-2 leading-tight">${currentQ.question}</h3>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-6 h-full relative">
+                    <!-- Player 1 (Kiri) -->
+                    <div class="flex-1 bg-gradient-to-b from-pink-50 to-pink-100 rounded-[2rem] p-6 border-4 border-pink-300 shadow-xl relative transform transition-all duration-300 ${duelRoundWinner === 'p1' ? 'scale-105 ring-4 ring-green-400 z-10' : ''}">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="text-2xl font-black text-pink-700">🔴 Player 1</h4>
+                            <div class="text-3xl font-black text-pink-600 bg-white px-4 py-1 rounded-full shadow-inner">${player1Score}</div>
+                        </div>
+                        <div class="flex flex-col gap-3">
+                            ${p1OptionsHTML}
+                        </div>
+                        ${duelRoundWinner === 'p1' ? '<div class="absolute inset-0 flex items-center justify-center text-8xl animate-bounce pointer-events-none drop-shadow-lg z-10">⭐</div>' : ''}
+                        ${p1Locked && duelRoundWinner !== 'p1' ? '<div class="absolute inset-0 flex items-center justify-center text-8xl pointer-events-none opacity-80 z-10 animate-shake">❌</div>' : ''}
+                    </div>
+
+                    <!-- VS Badge -->
+                    <div class="hidden md:flex absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 text-white font-black italic text-3xl w-16 h-16 rounded-full items-center justify-center shadow-2xl z-20 border-4 border-white">VS</div>
+
+                    <!-- Player 2 (Kanan) -->
+                    <div class="flex-1 bg-gradient-to-b from-blue-50 to-blue-100 rounded-[2rem] p-6 border-4 border-blue-300 shadow-xl relative transform transition-all duration-300 ${duelRoundWinner === 'p2' ? 'scale-105 ring-4 ring-green-400 z-10' : ''}">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="text-3xl font-black text-blue-600 bg-white px-4 py-1 rounded-full shadow-inner">${player2Score}</div>
+                            <h4 class="text-2xl font-black text-blue-700">Player 2 🔵</h4>
+                        </div>
+                        <div class="flex flex-col gap-3">
+                            ${p2OptionsHTML}
+                        </div>
+                        ${duelRoundWinner === 'p2' ? '<div class="absolute inset-0 flex items-center justify-center text-8xl animate-bounce pointer-events-none drop-shadow-lg z-10">⭐</div>' : ''}
+                        ${p2Locked && duelRoundWinner !== 'p2' ? '<div class="absolute inset-0 flex items-center justify-center text-8xl pointer-events-none opacity-80 z-10 animate-shake">❌</div>' : ''}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- 7. DUEL RESULT SCREEN ---
+        function getDuelResultHTML() {
+            let winnerText = "Yahh, Seri!";
+            let winnerColor = "text-gray-800";
+            let bgWinner = "from-gray-400 to-gray-600";
+            if (player1Score > player2Score) {
+                winnerText = "🎉 Player 1 Menang!";
+                winnerColor = "text-pink-600";
+                bgWinner = "from-pink-400 to-pink-600";
+            } else if (player2Score > player1Score) {
+                winnerText = "🎉 Player 2 Menang!";
+                winnerColor = "text-blue-600";
+                bgWinner = "from-blue-400 to-blue-600";
+            }
+
+            return `
+            <div class="max-w-2xl mx-auto text-center animate-fade-in">
+                <div class="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-gray-100">
+                    <div class="text-8xl mb-6 animate-bounce">⚔️</div>
+                    <h2 class="text-4xl font-black text-gray-800 mb-2">Duel Selesai!</h2>
+                    <h3 class="text-3xl font-black mb-8 ${winnerColor}">${winnerText}</h3>
+                    
+                    <div class="flex justify-around items-center mb-10">
+                        <div class="p-6 rounded-3xl ${player1Score > player2Score ? 'bg-pink-100 border-4 border-pink-400 scale-110 shadow-lg' : 'bg-gray-50'}">
+                            <p class="text-lg font-bold text-pink-700 mb-2">Player 1</p>
+                            <p class="text-5xl font-black text-pink-600">${player1Score}</p>
+                        </div>
+                        <div class="text-4xl font-black text-gray-400">-</div>
+                        <div class="p-6 rounded-3xl ${player2Score > player1Score ? 'bg-blue-100 border-4 border-blue-400 scale-110 shadow-lg' : 'bg-gray-50'}">
+                            <p class="text-lg font-bold text-blue-700 mb-2">Player 2</p>
+                            <p class="text-5xl font-black text-blue-600">${player2Score}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="selectCategoryAndMode('${selectedCategory}', 'duel')" class="bg-gradient-to-r ${bgWinner} text-white font-black py-4 px-8 rounded-2xl transition-all shadow-lg hover:scale-105">
+                            🔄 Duel Ulang
+                        </button>
+                        <button onclick="goHome()" class="bg-gray-800 hover:bg-black text-white font-black py-4 px-8 rounded-2xl transition-all shadow-xl hover:shadow-2xl hover:scale-105">
+                            🏠 Menu Utama
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // Mulai aplikasi
+        render();
+
+    </script>
+</body>
+</html>
